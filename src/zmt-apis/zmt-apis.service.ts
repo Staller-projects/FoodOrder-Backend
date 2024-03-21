@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
-import Cheerio from 'cheerio';
-import { parseHTML } from 'cheerio/lib/static';
-import { JSDOM } from 'jsdom';
 import { parse } from 'node-html-parser';
 
 @Injectable()
@@ -33,16 +30,20 @@ export class ZmtApisService {
 
   /**
    *
-   * @param resturentname This will be selected resturent to display the menu
+   * @param resturentName This will be selected resturent to display the menu
    * @returns The Scrapped data from the page
    */
-  async getResturentPageData(resturentname: string) {
+  async getResturentDetailsData(resturentName: string) {
     // DATA SCRAPPING
+
     try {
-      const url =
-        'https://www.zomato.com/pune/brahma-pure-veg-sinhgad-road/order';
+      // 'https://www.zomato.com/pune/brahma-pure-veg-sinhgad-road/order';
+      const resturentUrl = `${process.env.ZMT_BASE_URL}${resturentName}${process.env.RESTURENT_PAGE_TAB}`;
+
+      // console.log(resturentName);
+
       // const response = await axios.get(url);
-      const response = await axios.get(url, {
+      const response = await axios.get(resturentUrl, {
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -50,36 +51,33 @@ export class ZmtApisService {
         },
       });
 
-      try {
-        const html = response.data;
-        const root = parse(html);
+      
+      const html = response.data;
+      const root = parse(html);
 
-        const data = root
-          .querySelectorAll('script')
-          .find((element) =>
-            element.innerHTML.includes('__PRELOADED_STATE__'),
-          ).rawText;
+      const data = root
+        .querySelectorAll('script')
+        .find((element) =>
+          element.innerHTML.includes('__PRELOADED_STATE__'),
+        ).rawText; 
 
-        // Regular expression to extract JSON string inside JSON.parse() call
-        const jsonRegex = /JSON\.parse\("(.+?)"\)/;
-        const match = data.match(jsonRegex);
-        const jsonString = match ? match[1] : null;
+      // Regular expression to extract JSON string inside JSON.parse() call
+      const jsonRegex = /JSON\.parse\("(.+?)"\)/;
+      const match = data.match(jsonRegex);
+      const jsonString = match ? match[1] : null;
+      const level1 = jsonString.replace(/\\"/g, '"');
+      const level2 = level1.replace(/\\"/g, '"');
+      const metadataCleanJson = level2.replace(/\\"/g, "'");
+      let result = JSON.stringify(metadataCleanJson);
 
-        // Trim and remove double escaping from the JSON string
-        const trimmedJsonString = jsonString.trim();
-        const unescapedJson = trimmedJsonString.replace(/\\\\/g, '\\');
+      // console.log('Replacement completed');
 
-        // Parse the unescaped JSON string
-        const parsedJson = JSON.parse(unescapedJson);
-        console.log('asf');
+      // return jsonString;
+      // console.log(JSON.parse(result));
 
-        console.log(unescapedJson);
-        console.log(parsedJson);
+      return JSON.parse(result);
 
-        // return parsedJson;
-      } catch (error) {
-        return error;
-      }
+      // return parsedJson;
     } catch (error) {
       //   console.error('Error fetching data:', error);
       return error;

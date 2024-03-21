@@ -19,9 +19,9 @@ export class ZmtApisController {
         return response;
     }
     
-    @Get('respage') 
-    async getResturentPageData(@Query('resturentname') resturentname: string) {
-        const response =  await this.ZmtApisService.getResturentPageData(resturentname);      
+    @Get('resturantpage')  // GET 
+    async getResturentDetailsData(@Query('resturantname') resturentName: string) {
+        const response =  await this.ZmtApisService.getResturentDetailsData(resturentName);      
         
         return response;
 
